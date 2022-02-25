@@ -20,13 +20,16 @@ import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import org.bitcoinj.core.Base58;
 import org.bitcoinj.core.ECKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.bitcoinj.core.Utils.sha256hash160;
 
 public class Main implements Printable, ActionListener {
 
-    private static String hexRandom, qrCodeWIF, qrCodeBitcoinAddress;
     private static JLabel hexRandomValueLabel, WIFValueLabel, bitcoinAddressValueLabel;
+    private static GenerateKeys generatedKeys;
+    public static Logger logger = LoggerFactory.getLogger(Main.class);
 
     private enum Actions {
         PRINT, REGENERATE, QUIT, COPYWIF, COPYBTC
@@ -34,7 +37,7 @@ public class Main implements Printable, ActionListener {
 
     public static void main(String[] args) {
         // bitcoin address generation
-        generateBitcoinAddresses();
+        generatedKeys = new GenerateKeys();
         // Create UI
         UIManager.put("swing.boldMetal", Boolean.FALSE);
         JFrame f = new JFrame("Bitcoin paper wallet printer using SecureRandom");
@@ -74,19 +77,19 @@ public class Main implements Printable, ActionListener {
         JLabel hexRandomLabel = new JLabel("Hex random seed:");
         hexRandomLabel.setBounds(10, 10, 100, 20);
         f.add(hexRandomLabel);
-        hexRandomValueLabel = new JLabel(hexRandom);
+        hexRandomValueLabel = new JLabel(generatedKeys.hexRandom);
         hexRandomValueLabel.setBounds(115, 10, 500, 20);
         f.add(hexRandomValueLabel);
         JLabel WIFLabel = new JLabel("Bitcoin private key (WIF):");
         WIFLabel.setBounds(10, 40, 140, 20);
         f.add(WIFLabel);
-        WIFValueLabel = new JLabel(qrCodeWIF);
+        WIFValueLabel = new JLabel(generatedKeys.privateKey);
         WIFValueLabel.setBounds(150, 40, 400, 20);
         f.add(WIFValueLabel);
         JLabel bitcoinAddressLabel = new JLabel("Bitcoin address (Segwit):");
         bitcoinAddressLabel.setBounds(10, 70, 140, 20);
         f.add(bitcoinAddressLabel);
-        bitcoinAddressValueLabel = new JLabel(qrCodeBitcoinAddress);
+        bitcoinAddressValueLabel = new JLabel(generatedKeys.bitcoinAddress);
         bitcoinAddressValueLabel.setBounds(150, 70, 400, 20);
         f.add(bitcoinAddressValueLabel);
         // Finalize layout
@@ -107,57 +110,39 @@ public class Main implements Printable, ActionListener {
                 }
             }
         } else if (e.getActionCommand().equals(Actions.REGENERATE.name())) {
-            generateBitcoinAddresses();
+            generatedKeys = new GenerateKeys();
             updateLabels();
         } else if (e.getActionCommand().equals(Actions.QUIT.name())) {
             System.exit(0);
         } else if (e.getActionCommand().equals(Actions.COPYWIF.name())) {
-            StringSelection sS = new StringSelection(qrCodeWIF);
+            StringSelection sS = new StringSelection(generatedKeys.privateKey);
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
             clipboard.setContents(sS, null);
         } else if (e.getActionCommand().equals(Actions.COPYBTC.name())) {
-            StringSelection sS = new StringSelection(qrCodeBitcoinAddress);
+            StringSelection sS = new StringSelection(generatedKeys.bitcoinAddress);
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
             clipboard.setContents(sS, null);
         }
     }
 
-    public static void generateBitcoinAddresses() {
-        final String upperLimit = "F".repeat(56);  // safe upper limit for validity of ECDSA
-        byte[] random32bytes = new byte[32];
-        SecureRandom sr = new SecureRandom();  // using cryptographic safe random function
-        do {
-            sr.nextBytes(random32bytes);
-            hexRandom = byteArrayToHexString(random32bytes);
-        }
-        while (hexRandom.substring(0, 55).equals(upperLimit));
-        qrCodeWIF = Base58CheckEncode("80" + hexRandom + "01"); // private key WIF
-        String compressedPubKey = privToCompressedPublic(hexRandom);
-        String rawCompressedBitcoinAddress = hashShaRipemd(compressedPubKey);
-        String redeemScript = "0014" + rawCompressedBitcoinAddress;  // = OP_PUSH hashedCompressedPubKey
-        String hashedRedeemScript = hashShaRipemd(redeemScript);
-        qrCodeBitcoinAddress = Base58CheckEncode("05" + hashedRedeemScript); // public bitcoin address, Segwit style
-    }
-
     public static void updateLabels() {
-        hexRandomValueLabel.setText(hexRandom);
-        WIFValueLabel.setText(qrCodeWIF);
-        bitcoinAddressValueLabel.setText(qrCodeBitcoinAddress);
+        hexRandomValueLabel.setText(generatedKeys.hexRandom);
+        WIFValueLabel.setText(generatedKeys.privateKey);
+        bitcoinAddressValueLabel.setText(generatedKeys.bitcoinAddress);
     }
 
     public int print(Graphics g, PageFormat pf, int page) {
         if (page > 1) {
             return NO_SUCH_PAGE;
         }
-        // Page 1
         if (page == 0) {
             Graphics2D g2d = (Graphics2D) g;
             g.setFont(new Font("Monospaced", Font.PLAIN, 8));
             g2d.translate(pf.getImageableX(), pf.getImageableY());
             BufferedImage QRimageWIF = null, QRimageBitcoinAddress = null, RandomImage1 = null, RandomImage2 = null;
             try {
-                QRimageWIF = createQRImage(qrCodeWIF, 120);
-                QRimageBitcoinAddress = createQRImage(qrCodeBitcoinAddress, 120);
+                QRimageWIF = createQRImage(generatedKeys.privateKey, 120);
+                QRimageBitcoinAddress = createQRImage(generatedKeys.bitcoinAddress, 120);
                 RandomImage1 = createRandomImage(125, 150);
                 RandomImage2 = createRandomImage(100);
             } catch (WriterException e) {
@@ -165,13 +150,13 @@ public class Main implements Printable, ActionListener {
             }
             g.drawImage(QRimageBitcoinAddress, 20, 50, 110, 110, null);
             g.drawString("PUBLIC ADDRESS", 40, 150);
-            g.drawString(qrCodeBitcoinAddress, 5, 45);
-            g.drawString(qrCodeBitcoinAddress, 5, 165);
+            g.drawString(generatedKeys.bitcoinAddress, 5, 45);
+            g.drawString(generatedKeys.bitcoinAddress, 5, 165);
             g.drawImage(RandomImage1, 190, 30, 125, 150, null);
             g.drawImage(RandomImage2, 355, 55, 100, 100, null);
             g.drawImage(QRimageWIF, 460, 45, 120, 120, null);
-            g.drawString(qrCodeWIF, 322, 50);
-            g.drawString(qrCodeWIF, 322, 165);
+            g.drawString(generatedKeys.privateKey, 322, 50);
+            g.drawString(generatedKeys.privateKey, 322, 165);
             g.drawLine(0, 10, 325, 10);
             g.drawLine(325, 10, 335, 30);
             g.drawLine(335, 30, 570, 30);
@@ -198,7 +183,7 @@ public class Main implements Printable, ActionListener {
             g.drawLine(300, 80, 530, 80);
             g.drawLine(300, 130, 530, 130);
             g.drawLine(300, 180, 530, 180);
-            g.drawString("Private key", 150, 80);
+            g.drawString("Private key (WIF)", 140, 80);
             g.drawString("inside here", 150, 100);
             g.setFont(new Font("Monospaced", Font.BOLD, 10));
             g.drawString("KEEP HIDDEN", 140, 140);
@@ -238,10 +223,10 @@ public class Main implements Printable, ActionListener {
         graphics.setColor(Color.WHITE);
         graphics.fillRect(0, 0, size, size);
         graphics.setColor(Color.BLACK);
-        SecureRandom sr = new SecureRandom();
+        SecureRandom sr1 = new SecureRandom();
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
-                if (sr.nextBoolean()) {
+                if (sr1.nextBoolean()) {
                     graphics.fillRect(i, j, 1, 1);
                 }
             }
@@ -265,6 +250,28 @@ public class Main implements Printable, ActionListener {
             }
         }
         return image;
+    }
+
+    public static class GenerateKeys {
+        public String hexRandom, privateKey, bitcoinAddress;
+
+        public GenerateKeys() {
+            final String UPPER_LIMIT = "F".repeat(56);  // safe upper limit for validity of ECDSA
+            byte[] random32bytes = new byte[32];
+            SecureRandom sr = new SecureRandom();  // using cryptographic safe random function
+            do {
+                sr.nextBytes(random32bytes);
+                hexRandom = byteArrayToHexString(random32bytes);
+            }
+            while (hexRandom.substring(0, 55).equals(UPPER_LIMIT));
+            privateKey = Base58CheckEncode("80" + hexRandom + "01"); // private key in WIF format
+            String compressedPubKey = privToCompressedPublic(hexRandom);
+            String rawCompressedBitcoinAddress = hashShaRipemd(compressedPubKey);
+            String redeemScript = "0014" + rawCompressedBitcoinAddress;  // = OP_PUSH hashedCompressedPubKey
+            String hashedRedeemScript = hashShaRipemd(redeemScript);
+            bitcoinAddress = Base58CheckEncode("05" + hashedRedeemScript); // public bitcoin address, Segwit style
+            logger.info(bitcoinAddress);
+        }
     }
 
     private static String Base58CheckEncode(String address) {
