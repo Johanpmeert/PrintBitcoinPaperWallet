@@ -5,7 +5,7 @@ Using AWT displays a freshly generated Segwit style bitcoin address (Private and
 
 Let's you print it double sided so you can fold it and keep your Private key secure. Or you can copy the keys/addresses to the Clipboard.
 
-Fold it twice: first the right side on the short line, then again on the long line. In this way both sides of the Private key (in writing and in QR code) are shielded from direct view through the paper. The shielding is different every time you generate a new address.
+Fold it twice: first fold the right side to the short line, then again to the long line. In this way both sides of the Private key (in writing and in QR code) are shielded from direct view through the paper. The shielding is different every time you generate a new address.
 
 ![alt text](https://github.com/Johanpmeert/PrintBitcoinPaperWallet/blob/master/front.png?raw=true)
 
