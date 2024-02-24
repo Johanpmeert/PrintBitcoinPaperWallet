@@ -1,5 +1,5 @@
 # PrintBitcoinPaperWallet
-Create Bitcoin paper wallet, Segwit format using SecureRandom
+Create Bitcoin paper wallet, Segwit format using SecureRandom; or click the webcam button to create the random seed from the SHA256 of the picture file.
 
 Using AWT displays a freshly generated Segwit style bitcoin address (Private and Public public key and Bitcoin address).
 
