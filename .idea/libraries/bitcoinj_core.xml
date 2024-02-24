@@ -1,8 +1,8 @@
 <component name="libraryTable">
   <library name="bitcoinj.core" type="repository">
-    <properties maven-id="org.bitcoinj:bitcoinj-core:0.16.1" />
+    <properties maven-id="org.bitcoinj:bitcoinj-core:0.16.2" />
     <CLASSES>
-      <root url="jar://$MAVEN_REPOSITORY$/org/bitcoinj/bitcoinj-core/0.16.1/bitcoinj-core-0.16.1.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/bitcoinj/bitcoinj-core/0.16.2/bitcoinj-core-0.16.2.jar!/" />
       <root url="jar://$MAVEN_REPOSITORY$/org/bouncycastle/bcprov-jdk15to18/1.69/bcprov-jdk15to18-1.69.jar!/" />
       <root url="jar://$MAVEN_REPOSITORY$/com/google/guava/guava/31.0.1-android/guava-31.0.1-android.jar!/" />
       <root url="jar://$MAVEN_REPOSITORY$/com/google/guava/failureaccess/1.0.1/failureaccess-1.0.1.jar!/" />

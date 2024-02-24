@@ -11,5 +11,6 @@
     <orderEntry type="library" name="bitcoinj.core" level="project" />
     <orderEntry type="library" name="google.zxing.core" level="project" />
     <orderEntry type="library" name="slf4j.simple" level="project" />
+    <orderEntry type="library" name="github.sarxos.webcam.capture" level="project" />
   </component>
 </module>
